@@ -81,14 +81,17 @@ def check_first_page_noreplace(content, title_format):
 	text = content.extractText() + '\n'
 	merged_text = (''.join(text.split('\n'))).split(' ')
 	merged_title = merged_text[0] + '차'.decode('utf-8') + ' ' + merged_text[1]
-	merged_q = merged_text[3]
+	for i in range(2, len(merged_title)):
+		if merged_text[i] != '':
+			merged_q = merged_text[i]
+			break
 	#print(merged_title)
 	#print(merged_q)
 	#print(title_format.split())
 	if merged_title.encode('utf-8') != title_format:
 		print('***title format is wrong! please check...***')
 		correct = False
-	if merged_q != title_format.split()[1] + '.':
+	if merged_q.encode('utf-8') != title_format.split()[1] + '.':
 		print('***question number format is wrong! please check...***')
 		correct = False
 	if correct:
@@ -176,6 +179,7 @@ if __name__ == "__main__":
 
 			first_page = pdf.getPage(0)
 			last_page = pdf.getPage(pdf.getNumPages() - 1)
+			#check_first_page(first_page, prob_nums[temp_count])
 			check_first_page_noreplace(first_page, prob_nums[temp_count])
 			temp_count += 1
 			"""
