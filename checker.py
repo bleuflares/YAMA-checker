@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*- 
-#YAMA FORMAT CHECKER by bleuflares
+
+"""
+YAMA FORMAT CHECKER
+by KAIST EE/CS 13, KKU MED 20 bleuflares
+All Rights Reserved
+"""
 
 import sys
 import os
 import argparse
 import csv
 from PyPDF2 import PdfFileReader, PdfFileWriter
+from tika import parser
 
 
 def replace_text(content, replacements = dict()):
@@ -78,20 +84,34 @@ def replace_firstpage(content, title_format):
 
 def check_first_page_noreplace(content, title_format, out):
 	correct = True
-	text = content.extractText() + '\n'
-	merged_text = (''.join(text.split('\n'))).split(' ')
-	merged_title = merged_text[0] + '차'.decode('utf-8') + ' ' + merged_text[1]
-	for i in range(2, len(merged_title)):
-		if merged_text[i] != '':
-			merged_q = merged_text[i]
-			break
-	#print(merged_title)
-	#print(merged_q)
-	#print(title_format.split())
+	start = 0
+	merged_text = content.split('\n')
+	print(merged_text)
+	while merged_text[start] == '':
+		start+=1
+	merged_title = merged_text[start].strip()
+	space_pos = merged_title.find('차'.decode('utf-8')) - 1
+	if space_pos != -2 and merged_title[space_pos] == ' ':
+		merged_title = merged_title[:space_pos] + merged_title[space_pos + 1:]
+	space_pos = merged_title.find('식'.decode('utf-8')) + 1
+	if space_pos != 0 and merged_title[space_pos] == ' ':
+		merged_title = merged_title[:space_pos] + merged_title[space_pos + 1:]
+	second = start + 1
+	while merged_text[second] == '' or merged_text[second] == ' ' or merged_text[second] == '  ':
+		second += 1
+	print(merged_text[second])
+	merged_q = merged_text[second].split(' ')[0]
+
 	if merged_title.encode('utf-8') != title_format:
+		print('nononono!!!')
+		print(merged_title)
+		print(title_format)
 		out.write('***title format is wrong! please check...***\n')
 		correct = False
-	if merged_q.encode('utf-8') != title_format.split()[1] + '.':
+	correct_title_format = title_format.split()[1] + '.'
+	correct_title_format = ''.join(correct_title_format.split('주관식'))
+	if merged_q.encode('utf-8') != correct_title_format:
+		print('nononono!!!')
 		out.write('***question number format is wrong! please check...***\n')
 		correct = False
 	if correct:
@@ -176,13 +196,10 @@ if __name__ == "__main__":
 	for filename in filenames:
 		if os.path.isfile(filename.decode('utf-8')):
 			out_file.write(filename + ' exists checking file...\n')
-			pdf = PdfFileReader(filename.decode('utf-8'))
-			writer = PdfFileWriter()
+			pdf = parser.from_file(filename.decode('utf-8'))
 
-			first_page = pdf.getPage(0)
-			last_page = pdf.getPage(pdf.getNumPages() - 1)
 			#check_first_page(first_page, prob_nums[temp_count])
-			check_first_page_noreplace(first_page, prob_nums[temp_count], out_file)
+			check_first_page_noreplace(pdf['content'], prob_nums[temp_count], out_file)
 			temp_count += 1
 			"""
 			check_first_page(first_page, prob_nums[temp_count])
@@ -194,7 +211,7 @@ if __name__ == "__main__":
 			
 			"""
 		else:
-			out_file.write(filename + ' is missing... please check\n')
+			out_file.write('***' + filename + ' is missing... please check\n' + '***')
 			temp_count += 1
 			
 	f.close()
