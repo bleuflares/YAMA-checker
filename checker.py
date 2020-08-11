@@ -76,7 +76,7 @@ def replace_firstpage(content, title_format):
 		result += line + "\n"
 	return result
 
-def check_first_page_noreplace(content, title_format):
+def check_first_page_noreplace(content, title_format, out):
 	correct = True
 	text = content.extractText() + '\n'
 	merged_text = (''.join(text.split('\n'))).split(' ')
@@ -89,13 +89,13 @@ def check_first_page_noreplace(content, title_format):
 	#print(merged_q)
 	#print(title_format.split())
 	if merged_title.encode('utf-8') != title_format:
-		print('***title format is wrong! please check...***')
+		out.write('***title format is wrong! please check...***\n')
 		correct = False
 	if merged_q.encode('utf-8') != title_format.split()[1] + '.':
-		print('***question number format is wrong! please check...***')
+		out.write('***question number format is wrong! please check...***\n')
 		correct = False
 	if correct:
-		print('correct format... continue!')
+		out.write('correct format... continue!\n')
 
 
 def process_data(object, replacements):
@@ -123,14 +123,15 @@ def check_first_page(first_page, title_format):
 		contents.setData(encoded_data)
 
 if __name__ == "__main__":
-	ap = argparse.ArgumentParser()
-	ap.add_argument("-i", "--input", required=True, help="path to PDF document")
-	ap.add_argument("-u", "--uid", required=True, help="path to PDF document")
-	args = vars(ap.parse_args())
-
-	in_file = args["input"].decode('utf-8')
-	uid = args["uid"].decode('utf-8')
-
+	#ap = argparse.ArgumentParser()
+	#ap.add_argument("-i", "--input", required=True, help="path to PDF document")
+	#ap.add_argument("-u", "--uid", required=True, help="attendance number")
+	#args = vars(ap.parse_args())
+        
+	#in_file = args["input"]
+	#uid = args["uid"]
+        uid = str(input('type in your attendance number: '))
+        in_file = input('type in the name of the excel file(csv): ')
 	f = open(in_file, 'r')
 	reader = csv.reader(f)
 	prob_nums = []
@@ -171,16 +172,17 @@ if __name__ == "__main__":
 			filenames.append(subject[3:len(subject)] + ' ' + '_'.join(filename_base) + '.pdf')
 
 	temp_count = 0
+	out_file = open('result.txt', 'w')
 	for filename in filenames:
-		if os.path.isfile(filename):
-			print(filename + ' exists checking file...')
-			pdf = PdfFileReader(filename)
+		if os.path.isfile(filename.decode('utf-8')):
+			out_file.write(filename + ' exists checking file...\n')
+			pdf = PdfFileReader(filename.decode('utf-8'))
 			writer = PdfFileWriter()
 
 			first_page = pdf.getPage(0)
 			last_page = pdf.getPage(pdf.getNumPages() - 1)
 			#check_first_page(first_page, prob_nums[temp_count])
-			check_first_page_noreplace(first_page, prob_nums[temp_count])
+			check_first_page_noreplace(first_page, prob_nums[temp_count], out_file)
 			temp_count += 1
 			"""
 			check_first_page(first_page, prob_nums[temp_count])
@@ -192,9 +194,11 @@ if __name__ == "__main__":
 			
 			"""
 		else:
-			print(filename + ' is missing... please check')
+			out_file.write(filename + ' is missing... please check\n')
 			temp_count += 1
-	
+			
+	f.close()
+	out_file.close()
 
 	"""
 	filename_base = in_file.replace(os.path.splitext(in_file)[1], "")
